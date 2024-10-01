@@ -1,0 +1,7 @@
+{
+    "host": "HostName.local",
+    "user": "dbuser",
+    "password": "password",
+    "database": "helixc2",
+    "multipleStatements": true
+}
