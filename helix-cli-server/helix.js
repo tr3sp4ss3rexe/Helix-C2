@@ -25,8 +25,6 @@ const config = require("./config/db/helix.json");
     await checkAdminRights();
 })();
 
-
-
 let dbConnection;
 
 async function initDB() {
@@ -261,9 +259,6 @@ function displayMenu() {
     6) List running apps on a target
     7) Remove connected target`)
     console.log(`
-    Reconnaisance:`.green)
-    console.log(`    8) Port scanner`);
-    console.log(`
     q) Exit\n`.red);
 
     global.rl.question("> ", (choice) => {
@@ -324,11 +319,6 @@ function displayMenu() {
                     waitForUserInput(global.rl);
                 });
                 break;
-            case "8":
-                most_used_ports = [20, 21, 22, 23, 25, 53, 80, 110, 161, 443, 3389, 445, 3306];
-                console.log("Scanning for ports: ");
-                break;
-
             case "q":
                 console.log("Exiting...");
                 global.rl.close();
