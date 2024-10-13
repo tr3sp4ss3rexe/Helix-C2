@@ -373,7 +373,7 @@ function displayMenu() {
                 break;
             case "8":
                 global.rl.question("Enter IP address to scan: ", async (ip) => {
-                    const common_ports = [20, 21, 22, 53, 80, 443, 444, 445, 3306, 3389];
+                    const common_ports = [20, 21, 22, 53, 80, 443, 444, 445, 1337, 3306, 3389];
                     const ipRegex = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/;
                     if (!ipRegex.test(ip.trim())) {
                         console.log("Invalid IP address format.".red);
