@@ -21,7 +21,8 @@ Install Mariadb: https://mariadb.org/
 3) ``` sudo apt install npm ```
 4) ``` git clone https://github.com/tr3sp4ss3rexe/Helix-C2.git ```
 5) ``` cd Helix-C2 ```
-6) ``` npm i ```
+6) ``` cd helix-cli-server ```
+7) ``` npm i ```
 
 ### Server usage:
 1) ``` cd sql ```
