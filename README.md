@@ -15,6 +15,7 @@ Functionalities of the current version of Helix include but are not limited to:
 
 ### Server installation:
 
+Install Mariadb: https://mariadb.org/
 1) ``` sudo apt update && sudo apt upgrade ```
 2) ``` sudo apt install nodejs ```
 3) ``` sudo apt install npm ```
@@ -23,6 +24,6 @@ Functionalities of the current version of Helix include but are not limited to:
 6) ``` npm i ```
 
 ### Server usage:
-``` cd sql ```
-``` mariadb < reset-database.sql ```
-``` sudo node helix.js ```
+1) ``` cd sql ```
+2) ``` mariadb < reset-database.sql ```
+3) ``` sudo node helix.js ```
