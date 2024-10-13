@@ -3,6 +3,16 @@ This project has been done for a university course called "The individual projec
 
 <img src="https://github.com/user-attachments/assets/7e9b8275-d2ab-4034-87b2-7c909cda4235" alt="Helix" width="400"/>
 
+### Current functionalities:
+
+Functionalities of the current version of Helix include but are not limited to:
+* Remote interactive CMD shell
+* Gathers info such as Windows version, IP, HDD serial number and sends them to the server
+* Backgroundable client GUI
+* Installed application list
+* Full interaction logs
+* Server connection to mariadb for storing target info
+
 ### Server installation:
 
 1) ``` sudo apt update && sudo apt upgrade ```
