@@ -25,6 +25,5 @@ Install Mariadb: https://mariadb.org/
 7) ``` npm i ```
 
 ### Server usage:
-1) ``` cd sql ```
-2) ``` mariadb < reset-database.sql ```
-3) ``` sudo node helix.js ```
+
+ ``` sudo node helix.js ```
