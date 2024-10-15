@@ -1,5 +1,5 @@
 # Helix C2
-This project has been done for a university course called "The individual project course". According to the requirements list, this is supposed to be a C2 server which suites the needs of blue teamers and network admins controlling their remote devices and gathering a specific set of info, therefore the only available client option for now is a GUI client for Windows OS. In the future updates I will be adding payloads suitable for offensive operations, and perhaps change the current structure/functionalities completely.
+This project has been done for a university course called "The individual project course" and is the very first version of Helix C2. According to the requirements list, this is supposed to be a C2 server which suites the needs of blue teamers and network admins controlling their remote devices and gathering a specific set of info, therefore the only available client option for now is a Windows based GUI client. In the future versions ALOT will change and I will be adding payloads suitable for offensive operations, and perhaps change the current structure/functionalities/looks completely.
 
 <img src="https://github.com/user-attachments/assets/7e9b8275-d2ab-4034-87b2-7c909cda4235" alt="Helix" width="400"/>
 
@@ -15,7 +15,7 @@ Functionalities of the current version of Helix include but are not limited to:
 
 ### Server installation:
 
-Install Mariadb: https://mariadb.org/
+Install and setup Mariadb: https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04
 1) ``` sudo apt update && sudo apt upgrade ```
 2) ``` sudo apt install nodejs ```
 3) ``` sudo apt install npm ```
