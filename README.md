@@ -12,6 +12,7 @@ Functionalities of the current version of Helix include but are not limited to:
 * Installed application list
 * Full interaction logs
 * Server connection to mariadb for storing target info
+* Port scanning
 
 ### Server installation:
 
