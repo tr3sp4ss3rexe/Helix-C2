@@ -31,4 +31,4 @@ Install and setup Mariadb: https://www.digitalocean.com/community/tutorials/how-
 ### Client setup and usage:
 
 * Download a compiled and self-signed binary here: https://github.com/tr3sp4ss3rexe/Helix-C2/releases
-* Or compile the code yourself in MS Visual Studio: 
+* Or compile the code yourself in MS Visual Studio: https://github.com/tr3sp4ss3rexe/Helix-C2/tree/main/windows-gui-client
