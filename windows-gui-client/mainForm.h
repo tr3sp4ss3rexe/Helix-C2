@@ -262,22 +262,17 @@ namespace Helix {
 
             System::String^ ipAddrManaged = this->ipAddrBox->Text;
 
-            IntPtr ptrToStringChars = System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(ipAddrManaged);
-            char* ipAddr = static_cast<char*>(ptrToStringChars.ToPointer());
+            std::string ipAddr = msclr::interop::marshal_as<std::string>(ipAddrManaged);
 
-            if (strcmp(ipAddr, "") == 0) {
+            if (ipAddr.empty()) {
                 MessageBox::Show("IP address is empty", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
             }
             else {
-
                 updateTextBox("Attempting connection...");
 
-                thread revShellThread(revShell, ipAddr);
+                std::thread revShellThread(revShell, ipAddr);
                 revShellThread.detach();
-
             }
-
-            System::Runtime::InteropServices::Marshal::FreeHGlobal(ptrToStringChars);
         }
 
         System::Void richTextBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
