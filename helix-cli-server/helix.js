@@ -37,8 +37,8 @@ async function initDB() {
 
 async function insertClientData(clientId, deviceFingerprint, clientAddress, os, connectionTime) {
     const query = `
-        INSERT INTO targets (id, device_finger_print, ip, os, connection_time, disconnection_time) 
-        VALUES (?, ?, ?, ?, ?, NULL)
+        INSERT INTO targets (id, device_finger_print, ip, os, geolocation, connection_time, disconnection_time) 
+        VALUES (?, ?, ?, ?, "Whale Island, Alaska, US", ?, NULL)
     `;
     
     try {
