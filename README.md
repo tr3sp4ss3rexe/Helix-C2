@@ -14,9 +14,14 @@ Functionalities of the current version of Helix include but are not limited to:
 * Server connection to mariadb for storing target info
 * Port scanning
 
-### Server installation:
+### Database installation:
 
 Install and setup Mariadb: https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04
+
+Modify ```my.cnf``` for easier database access: https://mariadb.com/kb/en/configuring-mariadb-with-option-files/
+
+### Server installation:
+
 1) ``` sudo apt update && sudo apt upgrade ```
 2) ``` sudo apt install nodejs ```
 3) ``` sudo apt install npm ```
@@ -24,8 +29,12 @@ Install and setup Mariadb: https://www.digitalocean.com/community/tutorials/how-
 5) ``` cd Helix-C2 ```
 6) ``` cd helix-cli-server ```
 7) ``` npm i ```
+8) ``` cd sql ```
+9) ``` mariadb < reset-database.sql ```
 
 ### Server usage:
+
+``` cd helix-cli-server ```
 
  ``` sudo node helix.js ```
 
