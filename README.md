@@ -34,7 +34,14 @@ Modify ```my.cnf``` for easier database access: https://mariadb.com/kb/en/config
 
 ### Server usage:
 
- ``` sudo node helix.js ```
+On Linux:
+``` bash RUNME.sh ```
+
+Or: 
+1) ``` cd sql ```
+2) ``` mariadb < reset-database.sql ```
+3) ``` cd .. ```
+4) ``` sudo node helix.js ```
 
 ### Client setup and usage:
 
