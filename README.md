@@ -41,6 +41,8 @@ Modify ```my.cnf``` for easier database access: https://mariadb.com/kb/en/config
 * Download a compiled and self-signed binary here: https://github.com/tr3sp4ss3rexe/Helix-C2/releases
 * Or compile the code yourself in MS Visual Studio: https://github.com/tr3sp4ss3rexe/Helix-C2/tree/main/windows-gui-client
 
+Note: If you are using the compiled version, do not forget to download the ICON file from windows-gui-client, so that you can see the app running in the tray when background function is used.
+
 ### License
 
 * https://github.com/tr3sp4ss3rexe/Helix-C2?tab=GPL-3.0-1-ov-file
