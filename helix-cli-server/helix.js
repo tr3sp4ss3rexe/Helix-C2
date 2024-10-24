@@ -305,7 +305,7 @@ function displayMenu() {
     console.log(`    3) List compromised targets
     4) Interact with a target
     5) Show interaction logs
-    6) List running apps on a target
+    6) List installed apps on a target
     7) Remove connected target`)
     console.log(`
     Target recon:`.green)
@@ -375,8 +375,8 @@ function displayMenu() {
                 global.rl.question("Enter IP address to scan: ", async (ip) => {
                     const common_ports = [20, 21, 22, 53, 80, 443, 444, 445, 1337, 3306, 3389];
                     const ipRegex = /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/;
-                    if (!ipRegex.test(ip.trim())) {
-                        console.log("Invalid IP address format.".red);
+                    if (!ipRegex.test(ip.trim()) || ip == "127.0.0.1") {
+                        console.log("[-] Invalid IP address...".red);
                         waitForUserInput(global.rl);
                         return;
                     }
