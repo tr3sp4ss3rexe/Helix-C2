@@ -30,7 +30,8 @@ Modify ```my.cnf``` for easier database access: https://mariadb.com/kb/en/config
 6) ``` cd helix-cli-server ```
 7) ``` npm i ```
 8) ``` cd sql ```
-9) ``` mariadb < reset-database.sql ```
+9) Go to ```config/db/helix.json``` and make the necessary changes to the DB config file
+10) ``` mariadb < reset-database.sql ```
 
 ### Server usage:
 
