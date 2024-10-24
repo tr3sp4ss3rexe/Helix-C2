@@ -343,9 +343,10 @@ function displayMenu() {
                 global.rl.question("Enter client ID for installed application list: ", (clientId) => {
                     if (clients[clientId]) {
                         console.log(`Fetching installed applications list for Client ${clientId}. This may take a while...`);
-                        
-                        clients[clientId].socket.write(`powershell -Command "$apps = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -notlike '*Microsoft*' -and $_.Name -notlike '*SDK*' -and $_.Name -notlike '*Windows*' -and $_.Name -notlike '*Visual C++*' }; $apps | ForEach-Object { $_.Name } | Out-String -Stream | %{$_ -replace '\\n\\n', '\\n'} | Out-String"\n`);
-            
+
+                        clients[clientId].socket.write(`powershell -Command "try { (Get-ItemProperty -Path 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' -ErrorAction Stop | Where-Object { $_.DisplayName -and $_.DisplayName -notmatch 'Microsoft|SDK|Windows|Visual C\\+\\+' } | Select-Object -ExpandProperty DisplayName) -join \\"\\\`n\\" } catch { Write-Error \\"Failed to retrieve installed applications: $_\\" }"\n`);
+
+
                         clients[clientId].interactiveMode = true;
             
                         const waitForOutput = readline.createInterface({
