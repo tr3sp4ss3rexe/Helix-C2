@@ -34,8 +34,6 @@ Modify ```my.cnf``` for easier database access: https://mariadb.com/kb/en/config
 
 ### Server usage:
 
-``` cd helix-cli-server ```
-
  ``` sudo node helix.js ```
 
 ### Client setup and usage:
